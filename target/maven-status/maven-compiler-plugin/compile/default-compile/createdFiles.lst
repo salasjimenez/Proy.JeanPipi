@@ -1,0 +1,12 @@
+com\jeanpipi\modelos\Autor.class
+com\jeanpipi\dao\ArticuloDAO.class
+com\jeanpipi\modelos\Comentario.class
+main\java\com\jeanpipi\servlets\AdminServlet.class
+com\jeanpipi\modelos\Categoria.class
+main\java\com\jeanpipi\servlets\AuthServlet.class
+com\jeanpipi\config\ConexionDB.class
+com\jeanpipi\dao\UsuarioDAO.class
+com\jeanpipi\modelos\Usuario.class
+com\jeanpipi\modelos\Articulo.class
+com\jeanpipi\servlets\ArticuloApiServlet.class
+com\jeanpipi\modelos\Favorito.class

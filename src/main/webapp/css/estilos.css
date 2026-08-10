@@ -1,0 +1,72 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=Montserrat:wght@300;400;600&display=swap');
+
+body {
+    font-family: 'Montserrat', sans-serif;
+    background-color: #fafafa;
+    color: #111;
+}
+
+.brand-header {
+    font-family: 'Playfair Display', serif;
+    font-size: 4rem;
+    font-weight: 700;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    text-align: center;
+}
+
+.sub-nav {
+    border-top: 1px solid #111;
+    border-bottom: 1px solid #111;
+}
+
+.sub-nav a {
+    color: #111;
+    font-size: 0.85rem;
+    font-weight: 600;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    text-decoration: none;
+    padding: 10px 15px;
+}
+
+.sub-nav a:hover {
+    color: #d4af37; /* Dorado editorial */
+}
+
+.hero-card {
+    position: relative;
+    overflow: hidden;
+}
+
+.hero-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 2.5rem;
+    font-weight: 700;
+}
+
+.btn-editorial {
+    background-color: #111;
+    color: #fff;
+    border-radius: 0;
+    padding: 10px 25px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    font-size: 0.8rem;
+    transition: all 0.3s ease;
+}
+
+.btn-editorial:hover {
+    background-color: #d4af37;
+    color: #111;
+}
+
+.card-magazine {
+    border: none;
+    background: transparent;
+    transition: transform 0.3s ease;
+}
+
+.card-magazine:hover {
+    transform: translateY(-5px);
+}
