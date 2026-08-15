@@ -31,7 +31,7 @@ body {
 }
 
 .sub-nav a:hover {
-    color: #d4af37; /* Dorado editorial */
+    color: #d4af37;
 }
 
 .hero-card {
@@ -69,4 +69,41 @@ body {
 
 .card-magazine:hover {
     transform: translateY(-5px);
+}
+
+@media (max-width: 767.98px) {
+    .navbar .container {
+        gap: 0.75rem;
+    }
+
+    .navbar .container > .d-flex:first-child {
+        width: 100%;
+    }
+
+    .navbar .container > .d-flex:last-child {
+        width: 100%;
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+
+    #input-busqueda {
+        min-width: 0;
+        flex: 1 1 auto;
+    }
+
+    .sub-nav .container {
+        justify-content: flex-start !important;
+        flex-wrap: nowrap !important;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .sub-nav a {
+        flex: 0 0 auto;
+        white-space: nowrap;
+    }
+
+    .hero-title {
+        font-size: 2rem;
+    }
 }

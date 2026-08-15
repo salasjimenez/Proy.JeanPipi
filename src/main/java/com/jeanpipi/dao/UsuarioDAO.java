@@ -1,45 +1,85 @@
 package com.jeanpipi.dao;
 
 import com.jeanpipi.config.ConexionDB;
+import com.jeanpipi.exception.DataAccessException;
 import com.jeanpipi.modelos.Usuario;
 
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.Optional;
 
 public class UsuarioDAO {
+    public Optional<Usuario> buscarPorEmail(String email) {
+        String sql = """
+                SELECT id, nombre, email, contrasena, rol, fecha_registro
+                FROM usuarios
+                WHERE LOWER(email) = LOWER(?)
+                LIMIT 1
+                """;
 
-    public boolean registrar(Usuario usuario) {
-        String sql = "INSERT INTO usuarios (nombre, email, contrasena, rol) VALUES (?, ?, ?, 'LECTOR')";
-        try (Connection con = ConexionDB.getConnection();
-             PreparedStatement ps = con.prepareStatement(sql)) {
-            ps.setString(1, usuario.getNombre());
-            ps.setString(2, usuario.getEmail());
-            ps.setString(3, usuario.getContrasena());
-            return ps.executeUpdate() > 0;
+        try (Connection connection = ConexionDB.obtenerConexion();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+
+            statement.setString(1, email);
+            try (ResultSet resultSet = statement.executeQuery()) {
+                return resultSet.next() ? Optional.of(mapear(resultSet)) : Optional.empty();
+            }
         } catch (SQLException e) {
-            e.printStackTrace();
-            return false;
+            throw new DataAccessException("No se pudo consultar el usuario.", e);
         }
     }
 
-    public Usuario autenticar(String email, String contrasena) {
-        String sql = "SELECT * FROM usuarios WHERE email = ? AND contrasena = ?";
-        try (Connection con = ConexionDB.getConnection();
-             PreparedStatement ps = con.prepareStatement(sql)) {
-            ps.setString(1, email);
-            ps.setString(2, contrasena);
-            try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) {
-                    Usuario u = new Usuario();
-                    u.setId(rs.getInt("id"));
-                    u.setNombre(rs.getString("nombre"));
-                    u.setEmail(rs.getString("email"));
-                    u.setRol(rs.getString("rol"));
-                    return u;
+    public Usuario registrar(Usuario usuario) {
+        String sql = """
+                INSERT INTO usuarios (nombre, email, contrasena, rol)
+                VALUES (?, ?, ?, ?)
+                """;
+
+        try (Connection connection = ConexionDB.obtenerConexion();
+             PreparedStatement statement = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+
+            statement.setString(1, usuario.getNombre());
+            statement.setString(2, usuario.getEmail());
+            statement.setString(3, usuario.getContrasena());
+            statement.setString(4, usuario.getRol());
+            statement.executeUpdate();
+
+            try (ResultSet generatedKeys = statement.getGeneratedKeys()) {
+                if (generatedKeys.next()) {
+                    usuario.setId(generatedKeys.getInt(1));
                 }
+                return usuario;
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw new DataAccessException("No se pudo registrar el usuario.", e);
         }
-        return null;
+    }
+
+    public void actualizarContrasena(int usuarioId, String nuevaContrasena) {
+        String sql = "UPDATE usuarios SET contrasena = ? WHERE id = ?";
+
+        try (Connection connection = ConexionDB.obtenerConexion();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+
+            statement.setString(1, nuevaContrasena);
+            statement.setInt(2, usuarioId);
+            statement.executeUpdate();
+        } catch (SQLException e) {
+            throw new DataAccessException("No se pudo actualizar la contrasena.", e);
+        }
+    }
+
+    private Usuario mapear(ResultSet resultSet) throws SQLException {
+        Usuario usuario = new Usuario();
+        usuario.setId(resultSet.getInt("id"));
+        usuario.setNombre(resultSet.getString("nombre"));
+        usuario.setEmail(resultSet.getString("email"));
+        usuario.setContrasena(resultSet.getString("contrasena"));
+        usuario.setRol(resultSet.getString("rol"));
+        usuario.setFechaRegistro(resultSet.getTimestamp("fecha_registro"));
+        return usuario;
     }
 }

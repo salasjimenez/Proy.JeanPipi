@@ -1,36 +1,33 @@
-document.addEventListener("DOMContentLoaded", () => {
-    const form = document.getElementById("form-crear-articulo");
-    if (form) {
-        form.addEventListener("submit", (e) => {
-            e.preventDefault();
+(() => {
+    document.addEventListener("DOMContentLoaded", () => {
+        const form = document.getElementById("form-crear-articulo");
+        form?.addEventListener("submit", guardarArticulo);
+    });
 
-            const formData = new FormData(form);
-            const data = Object.fromEntries(formData.entries());
+    async function guardarArticulo(event) {
+        event.preventDefault();
+        const form = event.currentTarget;
+        const formData = new FormData(form);
+        const categoriaId = Number.parseInt(formData.get("categoriaId"), 10);
+        const payload = {
+            titulo: formData.get("titulo")?.toString().trim() || "",
+            descripcion: formData.get("descripcion")?.toString().trim() || "",
+            imagen: formData.get("imagen")?.toString().trim() || null,
+            contenido: formData.get("contenido")?.toString().trim() || "",
+            categoriaId: Number.isInteger(categoriaId) ? categoriaId : 1
+        };
 
-            if (data.categoriaId) {
-                data.categoriaId = parseInt(data.categoriaId, 10);
+        try {
+            await window.JeanPipiApi.post("api/articulos", payload);
+            alert("Artículo guardado exitosamente");
+            window.location.href = "index.jsp";
+        } catch (error) {
+            if (error.status === 401 || error.status === 403) {
+                window.location.href = "login.jsp";
+                return;
             }
-
-            fetch('api/articulos', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json; charset=UTF-8'
-                },
-                body: JSON.stringify(data)
-            })
-            .then(async res => {
-                const result = await res.json();
-                if (res.ok) {
-                    alert("Artículo guardado exitosamente");
-                    window.location.href = "index.jsp";
-                } else {
-                    alert("Error: " + (result.error || "No se pudo guardar"));
-                }
-            })
-            .catch(err => {
-                console.error("Error al enviar:", err);
-                alert("Error de conexión al guardar el artículo");
-            });
-        });
+            console.error("No se pudo guardar el articulo:", error);
+            alert(`Error: ${error.message || "No se pudo guardar"}`);
+        }
     }
-});
+})();

@@ -10,13 +10,11 @@
     <link rel="stylesheet" href="css/estilos.css">
 </head>
 <body>
-
-    <!-- Barra de Unificación Superior (Buscador, Sesión y Panel Admin) -->
     <nav class="navbar navbar-expand-lg navbar-light bg-light border-bottom py-2">
         <div class="container">
             <div class="d-flex align-items-center">
                 <input type="text" id="input-busqueda" class="form-control form-control-sm me-2" placeholder="Buscar tendencia...">
-                <button class="btn btn-sm btn-outline-dark" onclick="ejecutarBusqueda()"><i class="bi bi-search"></i> Buscar</button>
+                <button class="btn btn-sm btn-outline-dark" data-action="buscar"><i class="bi bi-search"></i> Buscar</button>
             </div>
             <div class="d-flex align-items-center gap-3">
                 <a href="login.jsp" class="text-dark text-decoration-none small fw-bold"><i class="bi bi-person"></i> INICIAR SESIÓN</a>
@@ -24,8 +22,6 @@
             </div>
         </div>
     </nav>
-
-    <!-- Header con el Logo de Imagen oficial -->
     <header class="py-4 bg-white text-center">
         <div class="container">
             <a href="index.jsp" class="d-inline-block">
@@ -33,23 +29,19 @@
             </a>
         </div>
     </header>
-
-    <!-- Navegación por Categorías -->
     <nav class="sub-nav bg-white mb-4">
         <div class="container d-flex justify-content-center flex-wrap">
-            <a href="#" onclick="filtrarCategoria('Moda')">Moda</a>
-            <a href="#" onclick="filtrarCategoria('Tendencias')">Tendencias</a>
-            <a href="#" onclick="filtrarCategoria('Belleza')">Belleza</a>
-            <a href="#" onclick="filtrarCategoria('Street Style')">Street Style</a>
-            <a href="#" onclick="filtrarCategoria('Diseñadores')">Diseñadores</a>
-            <a href="#" onclick="filtrarCategoria('Modelos')">Modelos</a>
-            <a href="#" onclick="filtrarCategoria('Celebridades')">Celebridades</a>
-            <a href="#" onclick="filtrarCategoria('Pasarelas')">Pasarelas</a>
+            <a href="#" data-categoria="Moda">Moda</a>
+            <a href="#" data-categoria="Tendencias">Tendencias</a>
+            <a href="#" data-categoria="Belleza">Belleza</a>
+            <a href="#" data-categoria="Street Style">Street Style</a>
+            <a href="#" data-categoria="Diseñadores">Diseñadores</a>
+            <a href="#" data-categoria="Modelos">Modelos</a>
+            <a href="#" data-categoria="Celebridades">Celebridades</a>
+            <a href="#" data-categoria="Pasarelas">Pasarelas</a>
         </div>
     </nav>
-
     <div class="container">
-        <!-- Portada Principal Enlazada -->
         <section class="hero-card my-5">
             <div class="row align-items-center">
                 <div class="col-lg-7">
@@ -63,23 +55,18 @@
                 </div>
             </div>
         </section>
-
         <hr class="my-5">
-
-        <!-- Tendencias de la Semana -->
         <section class="mb-5">
             <h3 class="font-serif fw-bold text-uppercase mb-4">Tendencias de la Semana</h3>
             <div class="row" id="contenedor-destacados"></div>
         </section>
-
-        <!-- Últimos Artículos -->
         <section class="mb-5">
             <h3 class="font-serif fw-bold text-uppercase mb-4">Últimos Artículos</h3>
             <div class="row g-4" id="contenedor-articulos"></div>
         </section>
     </div>
-
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="js/api.js"></script>
     <script src="js/app.js"></script>
 </body>
 </html>
