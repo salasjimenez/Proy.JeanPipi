@@ -1,0 +1,7 @@
+<!-- Logotipo tipografico de JeanPipi. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 150" role="img" aria-labelledby="title">
+  <title id="title">JeanPipi</title>
+  <rect width="720" height="150" fill="#ffffff"/>
+  <text x="360" y="98" text-anchor="middle" font-family="Georgia, Times New Roman, serif" font-size="78" font-weight="700" letter-spacing="11" fill="#111111">JEANPIPI</text>
+  <line x1="140" y1="118" x2="580" y2="118" stroke="#111111" stroke-width="2"/>
+</svg>

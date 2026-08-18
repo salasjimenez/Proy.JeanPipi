@@ -1,74 +1,90 @@
 package com.jeanpipi.servicios;
 
-import com.jeanpipi.dao.UsuarioDAO;
-import com.jeanpipi.exception.ValidationException;
+// Servicio de autenticacion.
+import com.jeanpipi.config.AppConfig;
+import com.jeanpipi.dao.PasswordResetDao;
+import com.jeanpipi.dao.UsuarioDao;
 import com.jeanpipi.modelos.Usuario;
 import com.jeanpipi.util.PasswordUtil;
+import com.jeanpipi.util.ValidationUtil;
 
-import java.util.Locale;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.SecureRandom;
+import java.sql.SQLException;
+import java.time.OffsetDateTime;
+import java.util.Base64;
+import java.util.List;
 import java.util.Optional;
 
 public class AuthService {
-    private final UsuarioDAO usuarioDAO;
+    private final UsuarioDao usuarioDao = new UsuarioDao();
+    private final PasswordResetDao resetDao = new PasswordResetDao();
+    private final EmailService emailService = new EmailService();
+    private final SecureRandom random = new SecureRandom();
 
-    public AuthService() {
-        this(new UsuarioDAO());
+    public Usuario register(String name, String email, String password) throws SQLException {
+        List<String> errors = ValidationUtil.registration(name, email, password);
+        if (!errors.isEmpty()) throw new IllegalArgumentException(String.join(". ", errors));
+        if (usuarioDao.findByEmail(email).isPresent()) throw new IllegalArgumentException("El correo ya esta registrado");
+        return usuarioDao.create(name, email, PasswordUtil.hash(password), "LECTOR");
     }
 
-    AuthService(UsuarioDAO usuarioDAO) {
-        this.usuarioDAO = usuarioDAO;
+    public Usuario login(String email, String password) throws SQLException {
+        if (!ValidationUtil.validEmail(email) || password == null || password.isBlank()) {
+            throw new SecurityException("Credenciales invalidas");
+        }
+        Optional<Usuario> optional = usuarioDao.findByEmail(email);
+        if (optional.isEmpty()) throw new SecurityException("Credenciales invalidas");
+        Usuario user = optional.get();
+        if (!user.isActivo()) throw new SecurityException("Cuenta inactiva");
+        if (user.getLockedUntil() != null && user.getLockedUntil().isAfter(OffsetDateTime.now())) {
+            throw new SecurityException("Cuenta temporalmente bloqueada");
+        }
+        if (!PasswordUtil.verify(password, user.getPasswordHash())) {
+            usuarioDao.recordFailure(user.getId());
+            throw new SecurityException("Credenciales invalidas");
+        }
+        usuarioDao.resetFailures(user.getId());
+        return usuarioDao.findById(user.getId()).orElseThrow();
     }
 
-    public Optional<Usuario> autenticar(String email, String contrasena) {
-        String normalizedEmail = normalizarEmail(email);
-        if (contrasena == null || contrasena.isEmpty()) {
-            throw new ValidationException("La contrasena es obligatoria.");
-        }
-
-        Optional<Usuario> found = usuarioDAO.buscarPorEmail(normalizedEmail);
-        if (found.isEmpty()) {
-            return Optional.empty();
-        }
-
-        Usuario usuario = found.get();
-        String storedPassword = usuario.getContrasena();
-        if (!PasswordUtil.verify(contrasena, storedPassword)) {
-            return Optional.empty();
-        }
-
-        if (!PasswordUtil.isHash(storedPassword)) {
-            usuarioDAO.actualizarContrasena(usuario.getId(), PasswordUtil.hash(contrasena));
-        }
-
-        usuario.setContrasena(null);
-        return Optional.of(usuario);
+    public void requestReset(String email) throws Exception {
+        if (!ValidationUtil.validEmail(email)) return;
+        Optional<Usuario> user = usuarioDao.findByEmail(email);
+        if (user.isEmpty() || !user.get().isActivo()) return;
+        byte[] bytes = new byte[32];
+        random.nextBytes(bytes);
+        String token = Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
+        resetDao.create(user.get().getId(), sha256(token), OffsetDateTime.now().plusMinutes(30));
+        String link = AppConfig.baseUrl() + "/restablecer.jsp?token=" + token;
+        emailService.sendPasswordReset(user.get().getEmail(), link);
     }
 
-    public void crearAdminInicial(String nombre, String email, String password) {
-        String normalizedEmail = normalizarEmail(email);
-        if (password == null || password.length() < 12) {
-            throw new ValidationException("La contrasena inicial del administrador debe tener al menos 12 caracteres.");
+    public void resetPassword(String token, String password) throws Exception {
+        if (token == null || token.isBlank()) throw new IllegalArgumentException("Token invalido");
+        List<String> errors = ValidationUtil.registration("Usuario", "user@example.com", password);
+        if (!errors.isEmpty() && errors.stream().anyMatch(e -> e.toLowerCase().contains("contrasena"))) {
+            throw new IllegalArgumentException("La nueva contrasena no cumple los requisitos");
         }
-        if (usuarioDAO.buscarPorEmail(normalizedEmail).isPresent()) {
-            return;
-        }
-
-        Usuario admin = new Usuario();
-        admin.setNombre(nombre == null || nombre.isBlank() ? "Administrador" : nombre.trim());
-        admin.setEmail(normalizedEmail);
-        admin.setContrasena(PasswordUtil.hash(password));
-        admin.setRol("ADMIN");
-        usuarioDAO.registrar(admin);
+        String hash = sha256(token);
+        long userId = resetDao.validUserId(hash).orElseThrow(() -> new IllegalArgumentException("Token invalido o expirado"));
+        usuarioDao.setPassword(userId, PasswordUtil.hash(password));
+        resetDao.markUsed(hash);
     }
 
-    private String normalizarEmail(String email) {
-        if (email == null || email.isBlank()) {
-            throw new ValidationException("El correo electronico es obligatorio.");
+    public void ensureAdminFromEnvironment() throws SQLException {
+        String email = AppConfig.env("JEANPIPI_ADMIN_EMAIL");
+        String password = AppConfig.env("JEANPIPI_ADMIN_PASSWORD");
+        String name = AppConfig.env("JEANPIPI_ADMIN_NAME", "Administrador");
+        if (email.isBlank() || password.isBlank() || password.length() < 12) return;
+        if (usuarioDao.findByEmail(email).isEmpty()) {
+            usuarioDao.create(name, email, PasswordUtil.hash(password), "ADMIN");
         }
-        String normalized = email.trim().toLowerCase(Locale.ROOT);
-        if (normalized.length() > 254 || !normalized.contains("@")) {
-            throw new ValidationException("El correo electronico no es valido.");
-        }
-        return normalized;
+    }
+
+    private String sha256(String value) throws Exception {
+        MessageDigest digest = MessageDigest.getInstance("SHA-256");
+        return Base64.getUrlEncoder().withoutPadding().encodeToString(digest.digest(value.getBytes(StandardCharsets.UTF_8)));
     }
 }

@@ -1,43 +1,44 @@
+<%-- Panel editorial y administrativo. --%>
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>JeanPipi | Panel Administrativo</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="app-context" content="${pageContext.request.contextPath}">
+  <title>Panel editorial | JEANPIPI</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"><link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet"><link rel="stylesheet" href="${pageContext.request.contextPath}/css/estilos.css">
 </head>
-<body class="bg-light">
-    <div class="container my-5">
-        <div class="d-flex justify-content-between align-items-center mb-4" style="gap: 1rem; flex-wrap: wrap;">
-            <h2>Administración - JeanPipi Magazine</h2>
-            <a href="index.jsp" class="btn btn-outline-secondary">← Volver al Inicio</a>
-        </div>
-        <div class="card p-4 mb-4 shadow-sm">
-            <h4>Crear Nuevo Artículo</h4>
-            <form id="form-crear-articulo">
-                <input type="hidden" name="categoriaId" value="1">
-                <div class="mb-3">
-                    <label class="form-label">Título</label>
-                    <input type="text" name="titulo" class="form-control" maxlength="200" required>
-                </div>
-                <div class="mb-3">
-                    <label class="form-label">Descripción</label>
-                    <input type="text" name="descripcion" class="form-control" required>
-                </div>
-                <div class="mb-3">
-                    <label class="form-label">URL Imagen</label>
-                    <input type="url" name="imagen" class="form-control" placeholder="https://ejemplo.com/imagen.jpg">
-                </div>
-                <div class="mb-3">
-                    <label class="form-label">Contenido</label>
-                    <textarea name="contenido" class="form-control" rows="5" required></textarea>
-                </div>
-                <button type="submit" class="btn btn-dark">Publicar Artículo</button>
-            </form>
-        </div>
-    </div>
-    <script src="js/api.js"></script>
-    <script src="js/admin.js"></script>
-</body>
-</html>
+<body class="admin-body">
+<div class="admin-shell">
+  <aside class="admin-sidebar" id="adminSidebar">
+    <a class="admin-logo" href="${pageContext.request.contextPath}/index.jsp">JEANPIPI</a>
+    <button class="admin-close d-lg-none" id="closeSidebar" aria-label="Cerrar menu"><i class="bi bi-x-lg"></i></button>
+    <nav aria-label="Panel editorial">
+      <button class="admin-nav active" data-panel="dashboard"><i class="bi bi-grid"></i><span>Dashboard</span></button>
+      <button class="admin-nav" data-panel="articles"><i class="bi bi-journal-text"></i><span>Articulos</span></button>
+      <button class="admin-nav" data-panel="editor"><i class="bi bi-pencil-square"></i><span>Editor</span></button>
+      <button class="admin-nav role-editor" data-panel="categories"><i class="bi bi-tags"></i><span>Categorias</span></button>
+      <button class="admin-nav role-admin" data-panel="users"><i class="bi bi-people"></i><span>Usuarios</span></button>
+      <button class="admin-nav role-editor" data-panel="comments"><i class="bi bi-chat-left-text"></i><span>Comentarios</span></button>
+      <button class="admin-nav" data-panel="media"><i class="bi bi-images"></i><span>Multimedia</span></button>
+      <button class="admin-nav role-editor" data-panel="home"><i class="bi bi-layout-text-window"></i><span>Portada</span></button>
+      <button class="admin-nav" data-panel="audit"><i class="bi bi-shield-check"></i><span>Auditoria</span></button>
+    </nav>
+    <a class="admin-back" href="${pageContext.request.contextPath}/index.jsp"><i class="bi bi-arrow-left"></i> Volver al sitio</a>
+  </aside>
+  <div class="admin-main">
+    <header class="admin-topbar"><button id="openSidebar" class="icon-button d-lg-none" aria-label="Abrir menu"><i class="bi bi-list"></i></button><div><span class="eyebrow">Panel editorial</span><strong id="adminUserName">Cargando...</strong></div><div class="admin-actions"><a class="outline-button small" href="${pageContext.request.contextPath}/perfil.jsp">Perfil</a><button id="adminLogout" class="outline-button small">Salir</button></div></header>
+    <main class="admin-content">
+      <section class="admin-panel active" data-panel-content="dashboard"><div class="admin-title"><div><p class="eyebrow">Resumen</p><h1>Dashboard</h1></div><button class="outline-button small" data-refresh="dashboard"><i class="bi bi-arrow-clockwise"></i> Actualizar</button></div><div id="metricCards" class="metric-grid"></div><div class="admin-grid-two"><div class="panel-card"><h2>Vistas recientes</h2><canvas id="viewsChart" height="180"></canvas></div><div class="panel-card"><h2>Articulos mas vistos</h2><div id="topArticles" class="compact-list"></div></div></div></section>
+      <section class="admin-panel" data-panel-content="articles"><div class="admin-title"><div><p class="eyebrow">Contenido</p><h1>Articulos</h1></div><button class="editorial-button small" data-open-editor="new"><i class="bi bi-plus-lg"></i> Nuevo</button></div><form id="adminArticleFilters" class="filter-bar"><input id="adminArticleQuery" placeholder="Buscar articulo"><select id="adminArticleStatus"><option value="">Todos los estados</option><option>BORRADOR</option><option>EN_REVISION</option><option>PROGRAMADO</option><option>PUBLICADO</option><option>ARCHIVADO</option></select><button class="outline-button small">Filtrar</button></form><div class="table-wrap"><table class="data-table"><thead><tr><th>Titulo</th><th>Autor</th><th>Estado</th><th>Vistas</th><th>Actualizado</th><th>Acciones</th></tr></thead><tbody id="articlesTable"></tbody></table></div><nav id="adminArticlesPagination" class="pagination-wrap"></nav></section>
+      <section class="admin-panel" data-panel-content="editor"><div class="admin-title"><div><p class="eyebrow">Flujo editorial</p><h1 id="editorHeading">Nuevo articulo</h1></div><div class="admin-actions"><a id="previewLink" class="outline-button small d-none" target="_blank">Vista previa</a><button class="outline-button small" id="clearEditor">Limpiar</button></div></div><form id="articleEditorForm" class="editor-layout"><div class="editor-main"><label>Titulo<input id="articleTitle" required maxlength="220"></label><label>Extracto<textarea id="articleExcerpt" maxlength="600"></textarea></label><div class="rich-editor-wrap"><div class="editor-toolbar" role="toolbar" aria-label="Formato"><button type="button" data-command="bold"><b>B</b></button><button type="button" data-command="italic"><i>I</i></button><button type="button" data-command="formatBlock" data-value="h2">H2</button><button type="button" data-command="formatBlock" data-value="blockquote">Cita</button><button type="button" data-command="insertUnorderedList"><i class="bi bi-list-ul"></i></button><button type="button" data-command="createLink"><i class="bi bi-link-45deg"></i></button></div><div id="articleContent" class="rich-editor" contenteditable="true" role="textbox" aria-multiline="true"></div></div></div><aside class="editor-settings"><div class="panel-card"><h2>Publicacion</h2><label>Estado<select id="articleStatus"><option>BORRADOR</option><option>EN_REVISION</option><option class="publish-option">PROGRAMADO</option><option class="publish-option">PUBLICADO</option><option class="publish-option">ARCHIVADO</option></select></label><label>Programar<input id="articleScheduled" type="datetime-local"></label><label>Autor<select id="articleAuthor"></select></label><label>Categoria<select id="articleCategory"></select></label><label class="check-row"><input id="articleFeatured" type="checkbox"> Articulo destacado</label><button class="editorial-button" type="submit">Guardar articulo</button><p id="editorMessage" class="form-message"></p></div><div class="panel-card"><h2>Imagen</h2><label>URL de portada<input id="articleCover" type="url"></label><button type="button" class="outline-button small" data-panel-jump="media">Abrir biblioteca</button></div><div class="panel-card"><h2>SEO</h2><label>Meta titulo<input id="seoTitle" maxlength="220"></label><label>Meta descripcion<textarea id="seoDescription" maxlength="320"></textarea></label><label>Canonical<input id="seoCanonical" type="url"></label><label>Imagen social<input id="seoImage" type="url"></label></div></aside></form><div class="panel-card mt-4"><h2>Historial de versiones</h2><div id="versionHistory" class="compact-list"><p class="muted">Guarda el articulo para crear el historial.</p></div></div></section>
+      <section class="admin-panel" data-panel-content="categories"><div class="admin-title"><div><p class="eyebrow">Organizacion</p><h1>Categorias</h1></div><button class="editorial-button small" id="newCategory">Nueva categoria</button></div><div class="admin-grid-two"><div class="table-wrap"><table class="data-table"><thead><tr><th>Nombre</th><th>Slug</th><th>Estado</th><th>Orden</th><th>Acciones</th></tr></thead><tbody id="categoriesTable"></tbody></table></div><form id="categoryForm" class="panel-card stack-form"><input id="categoryId" type="hidden"><h2 id="categoryFormTitle">Categoria</h2><label>Nombre<input id="categoryName" required maxlength="100"></label><label>Slug<input id="categorySlug" maxlength="120"></label><label>Descripcion<textarea id="categoryDescription"></textarea></label><label>Portada URL<input id="categoryCover" type="url"></label><label>Orden<input id="categoryOrder" type="number" min="0" value="0"></label><label class="check-row"><input id="categoryActive" type="checkbox" checked> Activa</label><button class="editorial-button" type="submit">Guardar</button><p id="categoryMessage" class="form-message"></p></form></div></section>
+      <section class="admin-panel" data-panel-content="users"><div class="admin-title"><div><p class="eyebrow">Administracion</p><h1>Usuarios</h1></div></div><form id="userFilters" class="filter-bar"><input id="userQuery" placeholder="Nombre o correo"><select id="userRole"><option value="">Todos los roles</option><option>ADMIN</option><option>EDITOR</option><option>AUTOR</option><option>LECTOR</option></select><button class="outline-button small">Filtrar</button></form><div class="table-wrap"><table class="data-table"><thead><tr><th>Nombre</th><th>Correo</th><th>Rol</th><th>Estado</th><th>Acciones</th></tr></thead><tbody id="usersTable"></tbody></table></div></section>
+      <section class="admin-panel" data-panel-content="comments"><div class="admin-title"><div><p class="eyebrow">Comunidad</p><h1>Moderacion</h1></div></div><div class="filter-bar"><select id="commentStatusFilter"><option value="">Todos</option><option>PENDIENTE</option><option>APROBADO</option><option>OCULTO</option><option>RECHAZADO</option></select><button id="refreshComments" class="outline-button small">Actualizar</button></div><div id="adminComments" class="moderation-list"></div></section>
+      <section class="admin-panel" data-panel-content="media"><div class="admin-title"><div><p class="eyebrow">Recursos</p><h1>Biblioteca multimedia</h1></div></div><form id="mediaUploadForm" class="upload-zone"><input id="mediaFile" name="file" type="file" accept="image/jpeg,image/png,image/gif,image/webp" required><button class="editorial-button small" type="submit">Subir imagen</button><p id="mediaMessage" class="form-message"></p></form><div id="mediaGrid" class="media-grid"></div></section>
+      <section class="admin-panel" data-panel-content="home"><div class="admin-title"><div><p class="eyebrow">Portada</p><h1>Secciones configurables</h1></div></div><div id="homeSections" class="settings-list"></div></section>
+      <section class="admin-panel" data-panel-content="audit"><div class="admin-title"><div><p class="eyebrow">Trazabilidad</p><h1>Auditoria reciente</h1></div></div><div class="table-wrap"><table class="data-table"><thead><tr><th>Fecha</th><th>Usuario</th><th>Accion</th><th>Entidad</th><th>IP</th></tr></thead><tbody id="auditTable"></tbody></table></div></section>
+    </main>
+  </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script><script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script><script src="${pageContext.request.contextPath}/js/api.js"></script><script src="${pageContext.request.contextPath}/js/ui.js"></script><script src="${pageContext.request.contextPath}/js/admin.js"></script>
+</body></html>

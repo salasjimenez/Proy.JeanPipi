@@ -1,60 +1,34 @@
-(() => {
-    class ApiError extends Error {
-        constructor(message, status, payload) {
-            super(message);
-            this.name = "ApiError";
-            this.status = status;
-            this.payload = payload;
-        }
+// Cliente HTTP de JeanPipi.
+(function(){
+  const meta=document.querySelector('meta[name="app-context"]');
+  const context=meta?meta.content:'';
+  let csrfToken=null;
+  async function ensureCsrf(){
+    if(csrfToken)return csrfToken;
+    const response=await fetch(context+'/api/v1/auth/csrf',{credentials:'same-origin',headers:{'Accept':'application/json'}});
+    const body=await response.json();
+    if(!response.ok||!body.ok)throw new Error(body.message||'No se pudo iniciar la sesion segura');
+    csrfToken=body.data.csrfToken;
+    return csrfToken;
+  }
+  async function request(path,options){
+    const config=Object.assign({method:'GET',credentials:'same-origin',headers:{'Accept':'application/json'}},options||{});
+    config.headers=Object.assign({'Accept':'application/json'},config.headers||{});
+    const method=(config.method||'GET').toUpperCase();
+    if(['POST','PUT','PATCH','DELETE'].includes(method))config.headers['X-CSRF-Token']=await ensureCsrf();
+    if(config.body&&!(config.body instanceof FormData)&&typeof config.body!=='string'){
+      config.headers['Content-Type']='application/json';
+      config.body=JSON.stringify(config.body);
     }
-
-    async function request(url, options = {}) {
-        const response = await fetch(url, {
-            credentials: "same-origin",
-            ...options,
-            headers: {
-                "Accept": "application/json",
-                ...(options.headers || {})
-            }
-        });
-
-        if (response.status === 204) {
-            if (!response.ok) {
-                throw new ApiError("La solicitud no pudo completarse.", response.status, null);
-            }
-            return null;
-        }
-
-        const contentType = response.headers.get("content-type") || "";
-        let payload = null;
-        if (contentType.includes("application/json")) {
-            payload = await response.json().catch(() => null);
-        } else {
-            const text = await response.text();
-            payload = text ? { mensaje: text } : null;
-        }
-
-        if (!response.ok) {
-            const message = payload?.mensaje || payload?.error || `Error HTTP ${response.status}`;
-            throw new ApiError(message, response.status, payload);
-        }
-
-        return payload;
+    const response=await fetch(context+path,config);
+    let body=null;
+    try{body=await response.json();}catch(e){body={ok:false,message:'Respuesta invalida del servidor'};}
+    if(!response.ok||!body.ok){
+      const error=new Error(body.message||'No se pudo completar la solicitud');
+      error.status=response.status;
+      throw error;
     }
-
-    function jsonOptions(method, body) {
-        return {
-            method,
-            headers: { "Content-Type": "application/json;charset=UTF-8" },
-            body: JSON.stringify(body)
-        };
-    }
-
-    window.JeanPipiApi = Object.freeze({
-        ApiError,
-        get: (url) => request(url),
-        post: (url, body) => request(url, jsonOptions("POST", body)),
-        put: (url, body) => request(url, jsonOptions("PUT", body)),
-        delete: (url) => request(url, { method: "DELETE" })
-    });
+    return body.data;
+  }
+  window.JeanPipiApi={context,get:(p)=>request(p),post:(p,b)=>request(p,{method:'POST',body:b}),put:(p,b)=>request(p,{method:'PUT',body:b}),patch:(p,b)=>request(p,{method:'PATCH',body:b}),delete:(p)=>request(p,{method:'DELETE'}),request,ensureCsrf,setCsrf:(value)=>{csrfToken=value;}};
 })();

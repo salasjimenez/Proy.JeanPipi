@@ -1,0 +1,7 @@
+# Archivos ignorados por Docker.
+target
+.git
+.github
+.env
+uploads
+*.log

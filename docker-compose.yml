@@ -1,0 +1,46 @@
+# Servicios locales de JeanPipi.
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ${JEANPIPI_DB_NAME:-jeanpipi_db}
+      POSTGRES_USER: ${JEANPIPI_DB_USER:-jeanpipi}
+      POSTGRES_PASSWORD: ${JEANPIPI_DB_PASSWORD:-change-local-password}
+    volumes:
+      - jeanpipi_db:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${JEANPIPI_DB_USER:-jeanpipi} -d ${JEANPIPI_DB_NAME:-jeanpipi_db}"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+  app:
+    build: .
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      JEANPIPI_ENV: ${JEANPIPI_ENV:-dev}
+      JEANPIPI_DB_URL: jdbc:postgresql://db:5432/${JEANPIPI_DB_NAME:-jeanpipi_db}
+      JEANPIPI_DB_USER: ${JEANPIPI_DB_USER:-jeanpipi}
+      JEANPIPI_DB_PASSWORD: ${JEANPIPI_DB_PASSWORD:-change-local-password}
+      JEANPIPI_DB_POOL_SIZE: ${JEANPIPI_DB_POOL_SIZE:-10}
+      JEANPIPI_BASE_URL: ${JEANPIPI_BASE_URL:-http://localhost:8080}
+      JEANPIPI_UPLOAD_DIR: /var/lib/jeanpipi/uploads
+      JEANPIPI_ADMIN_NAME: ${JEANPIPI_ADMIN_NAME:-Administrador}
+      JEANPIPI_ADMIN_EMAIL: ${JEANPIPI_ADMIN_EMAIL:-}
+      JEANPIPI_ADMIN_PASSWORD: ${JEANPIPI_ADMIN_PASSWORD:-}
+      JEANPIPI_SMTP_HOST: ${JEANPIPI_SMTP_HOST:-}
+      JEANPIPI_SMTP_PORT: ${JEANPIPI_SMTP_PORT:-587}
+      JEANPIPI_SMTP_USER: ${JEANPIPI_SMTP_USER:-}
+      JEANPIPI_SMTP_PASSWORD: ${JEANPIPI_SMTP_PASSWORD:-}
+      JEANPIPI_SMTP_FROM: ${JEANPIPI_SMTP_FROM:-}
+      JEANPIPI_SMTP_TLS: ${JEANPIPI_SMTP_TLS:-true}
+    volumes:
+      - jeanpipi_uploads:/var/lib/jeanpipi/uploads
+    ports:
+      - "8080:8080"
+volumes:
+  jeanpipi_db:
+  jeanpipi_uploads:

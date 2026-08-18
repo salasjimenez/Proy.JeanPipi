@@ -1,132 +1,98 @@
 package com.jeanpipi.servlets;
 
-import com.jeanpipi.dto.AuthRequest;
+// API de autenticacion.
 import com.jeanpipi.modelos.Usuario;
+import com.jeanpipi.servicios.AuditService;
 import com.jeanpipi.servicios.AuthService;
-import com.jeanpipi.util.ApiErrorHandler;
+import com.jeanpipi.util.CsrfUtil;
 import com.jeanpipi.util.JsonUtil;
 import com.jeanpipi.util.RequestUtil;
-import com.jeanpipi.util.SessionUtil;
+import com.jeanpipi.util.SecurityUtil;
 
 import javax.servlet.annotation.WebServlet;
-import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
-import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.Optional;
-import java.util.logging.Logger;
 
-@WebServlet("/api/auth")
-public class AuthServlet extends HttpServlet {
-    private static final long serialVersionUID = 1L;
-    private static final Logger LOGGER = Logger.getLogger(AuthServlet.class.getName());
-    private transient AuthService authService;
+@WebServlet("/api/v1/auth/*")
+public class AuthServlet extends BaseApiServlet {
+    private final AuthService service = new AuthService();
+    private final AuditService audit = new AuditService();
 
     @Override
-    public void init() {
-        this.authService = new AuthService();
-    }
-
-    @Override
-    protected void doGet(HttpServletRequest request, HttpServletResponse response) throws IOException {
-        HttpSession session = request.getSession(false);
-        Map<String, Object> result = new LinkedHashMap<>();
-        result.put("autenticado", SessionUtil.autenticado(request));
-        if (session != null) {
-            result.put("nombre", session.getAttribute(SessionUtil.USER_NAME));
-            result.put("rol", session.getAttribute(SessionUtil.USER_ROLE));
+    protected void handleGet(HttpServletRequest req, HttpServletResponse res) throws Exception {
+        String[] p = path(req);
+        String action = p.length == 0 ? "session" : p[0];
+        if ("csrf".equals(action)) {
+            JsonUtil.ok(res, Map.of("csrfToken", CsrfUtil.token(req)));
+            return;
         }
-        JsonUtil.escribir(response, HttpServletResponse.SC_OK, result);
+        if ("session".equals(action)) {
+            Map<String, Object> data = new LinkedHashMap<>();
+            data.put("user", SecurityUtil.user(req));
+            data.put("csrfToken", CsrfUtil.token(req));
+            JsonUtil.ok(res, data);
+            return;
+        }
+        JsonUtil.error(res, 404, "Ruta no encontrada");
     }
 
     @Override
-    protected void doPost(HttpServletRequest request, HttpServletResponse response) throws IOException {
-        boolean json = RequestUtil.esJson(request);
-        try {
-            AuthRequest authRequest = leerRequest(request, json);
-            if ("logout".equalsIgnoreCase(authRequest.getAction())) {
-                cerrarSesion(request);
-                responderSalida(request, response, json);
-                return;
-            }
-
-            Optional<Usuario> authenticated = authService.autenticar(
-                    authRequest.getEmail(), authRequest.getContrasena());
-
-            if (authenticated.isEmpty()) {
-                if (json) {
-                    JsonUtil.mensaje(response, HttpServletResponse.SC_UNAUTHORIZED,
-                            "Correo o contrasena incorrectos.");
-                } else {
-                    response.sendRedirect(request.getContextPath() + "/login.jsp?error=1");
-                }
-                return;
-            }
-
-            Usuario usuario = authenticated.get();
-            iniciarSesion(request, usuario);
-            String destino = "ADMIN".equalsIgnoreCase(usuario.getRol()) ? "/admin.jsp" : "/index.jsp";
-
-            if (json) {
-                Map<String, Object> result = new LinkedHashMap<>();
-                result.put("ok", true);
-                result.put("nombre", usuario.getNombre());
-                result.put("rol", usuario.getRol());
-                result.put("redirect", request.getContextPath() + destino);
-                JsonUtil.escribir(response, HttpServletResponse.SC_OK, result);
-            } else {
-                response.sendRedirect(request.getContextPath() + destino);
-            }
-        } catch (Exception e) {
-            if (json) {
-                ApiErrorHandler.responder(response, e, LOGGER);
-            } else {
-                LOGGER.warning("Solicitud de autenticacion invalida: " + e.getMessage());
-                response.sendRedirect(request.getContextPath() + "/login.jsp?error=1");
-            }
+    protected void handlePost(HttpServletRequest req, HttpServletResponse res) throws Exception {
+        String[] p = path(req);
+        if (p.length == 0) throw new IllegalArgumentException("Accion requerida");
+        switch (p[0]) {
+            case "register" -> register(req, res);
+            case "login" -> login(req, res);
+            case "logout" -> logout(req, res);
+            case "forgot-password" -> forgot(req, res);
+            case "reset-password" -> reset(req, res);
+            default -> JsonUtil.error(res, 404, "Ruta no encontrada");
         }
     }
 
-    private AuthRequest leerRequest(HttpServletRequest request, boolean json) throws IOException {
-        if (json) {
-            return RequestUtil.leerJson(request, AuthRequest.class);
-        }
-
-        AuthRequest authRequest = new AuthRequest();
-        authRequest.setEmail(request.getParameter("email"));
-        authRequest.setContrasena(request.getParameter("contrasena"));
-        authRequest.setAction(request.getParameter("action"));
-        return authRequest;
+    private void register(HttpServletRequest req, HttpServletResponse res) throws Exception {
+        AuthPayload payload = JsonUtil.read(req, AuthPayload.class);
+        Usuario user = service.register(payload.name, payload.email, payload.password);
+        req.getSession(true).setAttribute("usuario", user);
+        req.changeSessionId();
+        audit.record(user, "REGISTRO", "usuario", user.getId(), RequestUtil.clientIp(req), null);
+        JsonUtil.created(res, Map.of("user", user, "csrfToken", CsrfUtil.token(req)));
     }
 
-    private void iniciarSesion(HttpServletRequest request, Usuario usuario) {
-        HttpSession current = request.getSession(false);
-        if (current != null) {
-            current.invalidate();
-        }
-        HttpSession session = request.getSession(true);
-        request.changeSessionId();
-        session.setMaxInactiveInterval(30 * 60);
-        session.setAttribute(SessionUtil.USER_ID, usuario.getId());
-        session.setAttribute(SessionUtil.USER_NAME, usuario.getNombre());
-        session.setAttribute(SessionUtil.USER_ROLE, usuario.getRol());
+    private void login(HttpServletRequest req, HttpServletResponse res) throws Exception {
+        AuthPayload payload = JsonUtil.read(req, AuthPayload.class);
+        Usuario user = service.login(payload.email, payload.password);
+        req.getSession(true).setAttribute("usuario", user);
+        req.changeSessionId();
+        audit.record(user, "LOGIN", "sesion", user.getId(), RequestUtil.clientIp(req), null);
+        JsonUtil.ok(res, Map.of("user", user, "csrfToken", CsrfUtil.token(req)));
     }
 
-    private void cerrarSesion(HttpServletRequest request) {
-        HttpSession session = request.getSession(false);
-        if (session != null) {
-            session.invalidate();
-        }
+    private void logout(HttpServletRequest req, HttpServletResponse res) throws Exception {
+        Usuario user = SecurityUtil.user(req);
+        audit.record(user, "LOGOUT", "sesion", user == null ? null : user.getId(), RequestUtil.clientIp(req), null);
+        if (req.getSession(false) != null) req.getSession(false).invalidate();
+        JsonUtil.ok(res, Map.of("message", "Sesion cerrada"));
     }
 
-    private void responderSalida(HttpServletRequest request, HttpServletResponse response, boolean json) throws IOException {
-        if (json) {
-            JsonUtil.mensaje(response, HttpServletResponse.SC_OK, "Sesion cerrada correctamente.");
-        } else {
-            response.sendRedirect(request.getContextPath() + "/index.jsp");
-        }
+    private void forgot(HttpServletRequest req, HttpServletResponse res) throws Exception {
+        AuthPayload payload = JsonUtil.read(req, AuthPayload.class);
+        service.requestReset(payload.email);
+        JsonUtil.ok(res, Map.of("message", "Si la cuenta existe, se enviaron instrucciones"));
+    }
+
+    private void reset(HttpServletRequest req, HttpServletResponse res) throws Exception {
+        AuthPayload payload = JsonUtil.read(req, AuthPayload.class);
+        service.resetPassword(payload.token, payload.password);
+        JsonUtil.ok(res, Map.of("message", "Contrasena actualizada"));
+    }
+
+    private static final class AuthPayload {
+        String name;
+        String email;
+        String password;
+        String token;
     }
 }

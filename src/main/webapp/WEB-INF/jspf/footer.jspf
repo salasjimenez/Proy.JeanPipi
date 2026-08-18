@@ -1,0 +1,13 @@
+<%-- Pie principal del sitio. --%>
+<footer class="site-footer">
+  <div class="container-xl footer-grid">
+    <div><strong class="footer-brand">JEANPIPI</strong><p>Revista digital de moda, tendencias, belleza y cultura visual.</p></div>
+    <div><strong>Explorar</strong><a href="${pageContext.request.contextPath}/index.jsp">Inicio</a><a href="${pageContext.request.contextPath}/swagger.jsp">API</a></div>
+    <div><strong>Cuenta</strong><a href="${pageContext.request.contextPath}/perfil.jsp">Perfil</a><a href="${pageContext.request.contextPath}/favoritos.jsp">Favoritos</a></div>
+  </div>
+  <div class="footer-copy">JeanPipi</div>
+</footer>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="${pageContext.request.contextPath}/js/api.js"></script>
+<script src="${pageContext.request.contextPath}/js/ui.js"></script>
+<script src="${pageContext.request.contextPath}/js/shell.js"></script>

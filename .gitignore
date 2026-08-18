@@ -1,8 +1,9 @@
+# Archivos ignorados por Git.
 target/
 .idea/
 .vscode/
 *.iml
 *.log
 .env
+uploads/
 .DS_Store
-Thumbs.db

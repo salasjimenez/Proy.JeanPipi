@@ -1,0 +1,45 @@
+# Despliegue de produccion con Docker Compose.
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: jeanpipi
+      POSTGRES_USER: ${JEANPIPI_DB_USER}
+      POSTGRES_PASSWORD: ${JEANPIPI_DB_PASSWORD}
+    volumes:
+      - jeanpipi_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${JEANPIPI_DB_USER} -d jeanpipi"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+  app:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      JEANPIPI_DB_URL: jdbc:postgresql://postgres:5432/jeanpipi
+      JEANPIPI_DB_USER: ${JEANPIPI_DB_USER}
+      JEANPIPI_DB_PASSWORD: ${JEANPIPI_DB_PASSWORD}
+      JEANPIPI_DB_POOL_SIZE: ${JEANPIPI_DB_POOL_SIZE:-12}
+      JEANPIPI_BASE_URL: ${JEANPIPI_BASE_URL}
+      JEANPIPI_UPLOAD_DIR: /var/lib/jeanpipi/uploads
+      JEANPIPI_ADMIN_NAME: ${JEANPIPI_ADMIN_NAME}
+      JEANPIPI_ADMIN_EMAIL: ${JEANPIPI_ADMIN_EMAIL}
+      JEANPIPI_ADMIN_PASSWORD: ${JEANPIPI_ADMIN_PASSWORD}
+      JEANPIPI_SMTP_HOST: ${JEANPIPI_SMTP_HOST:-}
+      JEANPIPI_SMTP_PORT: ${JEANPIPI_SMTP_PORT:-587}
+      JEANPIPI_SMTP_USER: ${JEANPIPI_SMTP_USER:-}
+      JEANPIPI_SMTP_PASSWORD: ${JEANPIPI_SMTP_PASSWORD:-}
+      JEANPIPI_SMTP_FROM: ${JEANPIPI_SMTP_FROM:-}
+      JEANPIPI_SMTP_TLS: ${JEANPIPI_SMTP_TLS:-true}
+    ports:
+      - "8080:8080"
+    volumes:
+      - jeanpipi_uploads:/var/lib/jeanpipi/uploads
+volumes:
+  jeanpipi_pgdata:
+  jeanpipi_uploads:

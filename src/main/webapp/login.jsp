@@ -1,30 +1,6 @@
+<%-- Pagina de inicio de sesion. --%>
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>JeanPipi | Acceso</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-</head>
-<body class="bg-light">
-    <div class="container d-flex justify-content-center align-items-center vh-100">
-        <div class="card p-4 shadow-sm" style="width: 400px; max-width: 100%;">
-            <h3 class="text-center fw-bold mb-4">JEANPIPI</h3>
-            <form action="api/auth" method="POST">
-                <div class="mb-3">
-                    <label class="form-label">Correo Electrónico</label>
-                    <input type="email" name="email" class="form-control" autocomplete="username" required>
-                </div>
-                <div class="mb-3">
-                    <label class="form-label">Contraseña</label>
-                    <input type="password" name="contrasena" class="form-control" autocomplete="current-password" required>
-                </div>
-                <button type="submit" class="btn btn-dark w-100">Ingresar</button>
-            </form>
-        </div>
-    </div>
-    <script src="js/api.js"></script>
-    <script src="js/login.js"></script>
-</body>
-</html>
+<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="app-context" content="${pageContext.request.contextPath}"><title>Iniciar sesion | JEANPIPI</title><link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"><link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet"><link rel="stylesheet" href="${pageContext.request.contextPath}/css/estilos.css"></head><body>
+<%@ include file="/WEB-INF/jspf/header.jspf" %>
+<main class="auth-main"><section class="auth-card"><p class="eyebrow">Cuenta</p><h1>Iniciar sesion</h1><p>Accede a tus favoritos, perfil y herramientas editoriales.</p><form id="loginForm" class="stack-form"><label>Correo<input id="loginEmail" type="email" required autocomplete="email"></label><label>Contrasena<input id="loginPassword" type="password" required autocomplete="current-password"></label><button class="editorial-button" type="submit">Ingresar</button><p id="authMessage" class="form-message" role="status"></p></form><div class="auth-links"><a href="${pageContext.request.contextPath}/recuperar.jsp">Olvide mi contrasena</a><a href="${pageContext.request.contextPath}/registro.jsp">Crear cuenta</a></div></section></main>
+<%@ include file="/WEB-INF/jspf/footer.jspf" %><script src="${pageContext.request.contextPath}/js/auth.js"></script></body></html>

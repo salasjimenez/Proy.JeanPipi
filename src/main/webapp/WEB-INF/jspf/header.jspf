@@ -1,0 +1,35 @@
+<%-- Cabecera principal del sitio. --%>
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<header class="site-header">
+  <div class="utility-bar">
+    <div class="container-xl utility-inner">
+      <form id="globalSearchForm" class="global-search" role="search">
+        <label class="visually-hidden" for="globalSearch">Buscar</label>
+        <input id="globalSearch" type="search" placeholder="Buscar en JeanPipi" autocomplete="off">
+        <button type="submit" aria-label="Buscar"><i class="bi bi-search"></i></button>
+      </form>
+      <nav class="account-nav" aria-label="Cuenta">
+        <c:choose>
+          <c:when test="${not empty sessionScope.usuario}">
+            <a href="${pageContext.request.contextPath}/perfil.jsp"><i class="bi bi-person-circle"></i> ${sessionScope.usuario.nombre}</a>
+            <a href="${pageContext.request.contextPath}/favoritos.jsp"><i class="bi bi-bookmark-heart"></i> Favoritos</a>
+            <c:if test="${sessionScope.usuario.rol ne 'LECTOR'}"><a href="${pageContext.request.contextPath}/admin.jsp">Panel editorial</a></c:if>
+            <button type="button" id="logoutButton" class="link-button">Salir</button>
+          </c:when>
+          <c:otherwise>
+            <a href="${pageContext.request.contextPath}/login.jsp">Iniciar sesion</a>
+            <a href="${pageContext.request.contextPath}/registro.jsp">Crear cuenta</a>
+          </c:otherwise>
+        </c:choose>
+      </nav>
+    </div>
+  </div>
+  <div class="brand-row container-xl">
+    <a class="brand" href="${pageContext.request.contextPath}/index.jsp" aria-label="JeanPipi inicio">
+      <img src="${pageContext.request.contextPath}/img/JeanPipi.svg" alt="JeanPipi">
+    </a>
+  </div>
+  <nav class="category-bar" aria-label="Categorias">
+    <div class="container-xl category-scroll" id="categoryNav"><span class="nav-loading">Cargando categorias...</span></div>
+  </nav>
+</header>

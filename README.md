@@ -1,104 +1,94 @@
 # JeanPipi
 
-JeanPipi es una revista digital desarrollada con Java 17, Servlets, JSP, JDBC, PostgreSQL, Gson, JavaScript puro y CSS. Esta versión mantiene el diseño visual del repositorio original, corrige los flujos incompletos y organiza el código en capas DAO, servicios, DTO, Servlets y utilidades.
+JeanPipi es una revista digital construida con Java 17, JSP, Servlets, JDBC y PostgreSQL. El proyecto incluye portal publico, cuentas de lectores, flujo editorial, administracion, seguridad, API REST, pruebas y despliegue con Docker.
 
-## Requisitos
+## Funcionalidades incluidas
 
-- Java 17
-- Maven 3.9 o superior
-- PostgreSQL
+- Registro, inicio de sesion, perfil y recuperacion de contrasena.
+- Roles `ADMIN`, `EDITOR`, `AUTOR` y `LECTOR`.
+- Bloqueo temporal por intentos fallidos de autenticacion.
+- Gestion administrativa de usuarios.
+- CRUD editorial de articulos con borradores, revision, programacion, publicacion y archivo.
+- Editor enriquecido, vista previa e historial restaurable de versiones.
+- Gestion de categorias, autores y biblioteca de imagenes.
+- URLs amigables, SEO, Open Graph, contenido destacado y secciones configurables de portada.
+- Articulos relacionados, visualizaciones, lectura estimada, comentarios moderados y favoritos.
+- Busqueda, filtros, ordenamiento y paginacion.
+- Interfaz responsive Mobile First y accesible.
+- Dashboard con KPIs, graficos, auditoria y registro de actividad.
+- CSRF, rate limiting, validaciones, cabeceras de seguridad y consultas parametrizadas.
+- API REST bajo `/api/v1` y documentacion OpenAPI disponible en `/swagger.jsp`.
+- HikariCP, Flyway, logging con SLF4J/Logback, health check y paginas 403/404/500.
+- JUnit, Mockito, prueba de integracion opcional y GitHub Actions.
+- Docker, Docker Compose y configuracion separada por variables de entorno.
 
-## Configuración de PostgreSQL
+## Requisitos locales
 
-Crea la base de datos:
+- Java 17.
+- Maven 3.9 o compatible.
+- PostgreSQL 14 o superior, o Docker.
 
-```bash
-createdb jeanpipi_db
-```
+## Inicio rapido con Docker
 
-Aplica el esquema:
-
-```bash
-psql -d jeanpipi_db -f src/main/resources/schema.sql
-```
-
-El script es idempotente: no elimina las tablas existentes y puede ejecutarse nuevamente.
-
-## Variables de entorno
-
-Configura la conexión antes de iniciar la aplicación:
-
-```bash
-export JEANPIPI_DB_URL='jdbc:postgresql://localhost:5432/jeanpipi_db'
-export JEANPIPI_DB_USER='postgres'
-export JEANPIPI_DB_PASSWORD='TU_PASSWORD_POSTGRES'
-```
-
-Para crear de forma segura el primer administrador en una instalación nueva:
+1. Copia `.env.example` a `.env`.
+2. Cambia las credenciales y variables de administrador.
+3. Ejecuta:
 
 ```bash
-export JEANPIPI_ADMIN_EMAIL='admin@jeanpipi.local'
-export JEANPIPI_ADMIN_PASSWORD='CAMBIA_ESTA_PASSWORD_SEGURA'
-export JEANPIPI_ADMIN_NAME='Administrador'
+docker compose up -d --build
 ```
 
-`JEANPIPI_ADMIN_PASSWORD` debe tener al menos 12 caracteres. El sistema no contiene credenciales de administrador predeterminadas.
+4. Abre `http://localhost:8080`.
 
-También puedes proporcionar las propiedades JVM `jeanpipi.db.url`, `jeanpipi.db.user` y `jeanpipi.db.password` en lugar de variables de entorno.
+Flyway crea el esquema automaticamente al iniciar la aplicacion.
 
-## Ejecución local
+## Ejecucion con Maven
 
-```bash
-mvn clean jetty:run
-```
-
-La aplicación queda disponible en el contexto `/JeanPipi/` del puerto `8080`.
-
-## Flujo funcional
-
-- `index.jsp`: portada, búsqueda, filtros por categoría, tendencias y últimos artículos.
-- `articulo.jsp?id=ID`: detalle real de un artículo mediante `GET /api/articulos?id=ID`.
-- `login.jsp`: autenticación por sesión HTTP.
-- `admin.jsp`: panel protegido para usuarios con rol `ADMIN`.
-- `POST /api/articulos`: creación protegida de artículos.
-- `PUT /api/articulos?id=ID`: actualización protegida.
-- `DELETE /api/articulos?id=ID`: eliminación protegida.
-- `POST /api/favoritos`: alterna favoritos utilizando el usuario autenticado de la sesión.
-
-## Seguridad aplicada
-
-- Consultas SQL parametrizadas mediante `PreparedStatement`.
-- Recursos JDBC cerrados con try-with-resources.
-- Credenciales de PostgreSQL fuera del código fuente.
-- Contraseñas nuevas almacenadas mediante PBKDF2-HMAC-SHA256 con salt aleatorio.
-- Usuarios heredados con contraseña en texto plano son migrados al hash al autenticarse correctamente.
-- Regeneración del ID de sesión después del login.
-- Autorización del panel administrativo por rol.
-- Respuestas de error sin exponer mensajes internos de PostgreSQL.
-- Cabeceras CSP, `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy` y `Permissions-Policy`.
-- Renderizado de datos externos con `textContent` para reducir riesgo XSS.
-
-## Estructura
+Configura como minimo:
 
 ```text
-src/main/java/com/jeanpipi/
-├── config/
-├── dao/
-├── dto/
-├── exception/
-├── filtros/
-├── listeners/
-├── modelos/
-├── servicios/
-├── servlets/
-└── util/
-src/main/resources/schema.sql
-src/main/webapp/
-├── WEB-INF/web.xml
-├── css/estilos.css
-├── img/JeanPipi.png
-├── js/
-└── *.jsp
+JEANPIPI_DB_URL=jdbc:postgresql://localhost:5432/jeanpipi
+JEANPIPI_DB_USER=postgres
+JEANPIPI_DB_PASSWORD=tu-clave
+JEANPIPI_ADMIN_EMAIL=admin@example.com
+JEANPIPI_ADMIN_PASSWORD=una-clave-segura
 ```
 
-No se utilizan archivos `.html`; todo el marcado web permanece en JSP.
+Luego ejecuta:
+
+```bash
+mvn clean test
+mvn jetty:run
+```
+
+La aplicacion queda disponible en `http://localhost:8080/JeanPipi`.
+
+## Produccion
+
+Usa `.env.production.example` como referencia, cambia todos los secretos y ejecuta:
+
+```bash
+docker compose --env-file .env -f docker-compose.prod.yml up -d --build
+```
+
+En un entorno real se recomienda publicar el puerto 8080 detras de un proxy HTTPS y mantener PostgreSQL sin exposicion publica.
+
+## Correo de recuperacion
+
+Para que el flujo de recuperacion envie enlaces reales, configura las variables `JEANPIPI_SMTP_*`. Sin SMTP configurado la aplicacion no expone tokens en la interfaz.
+
+## Pruebas
+
+```bash
+mvn test
+```
+
+La prueba de integracion de PostgreSQL se habilita solo si existe `JEANPIPI_TEST_DB_URL`, con `JEANPIPI_TEST_DB_USER` y `JEANPIPI_TEST_DB_PASSWORD` cuando correspondan.
+
+## Build
+
+```bash
+mvn clean package
+```
+
+El WAR se genera como `target/JeanPipi.war`. `target/` esta excluido del repositorio.

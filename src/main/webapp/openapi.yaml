@@ -1,0 +1,296 @@
+# Documentacion de la API de JeanPipi.
+openapi: 3.0.3
+info:
+  title: JeanPipi API
+  version: 1.0.0
+  description: API para autenticacion, contenido editorial, usuarios, categorias, comentarios, favoritos, medios y dashboard.
+servers:
+  - url: /JeanPipi
+paths:
+  /api/health:
+    get:
+      summary: Comprueba la aplicacion y la base de datos
+      responses:
+        '200':
+          description: Servicio disponible
+  /api/v1/auth/session:
+    get:
+      summary: Obtiene la sesion actual
+      responses:
+        '200':
+          description: Estado de sesion
+  /api/v1/auth/register:
+    post:
+      summary: Registra un lector
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+      responses:
+        '201':
+          description: Usuario registrado
+  /api/v1/auth/login:
+    post:
+      summary: Inicia sesion
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Sesion iniciada
+        '429':
+          description: Limite de intentos alcanzado
+  /api/v1/auth/logout:
+    post:
+      summary: Cierra la sesion
+      responses:
+        '200':
+          description: Sesion cerrada
+  /api/v1/auth/forgot-password:
+    post:
+      summary: Solicita recuperacion de contrasena
+      responses:
+        '200':
+          description: Solicitud procesada
+  /api/v1/auth/reset-password:
+    post:
+      summary: Restablece la contrasena con token
+      responses:
+        '200':
+          description: Contrasena actualizada
+  /api/v1/users/me:
+    get:
+      summary: Obtiene el perfil autenticado
+      responses:
+        '200':
+          description: Perfil
+    put:
+      summary: Actualiza el perfil autenticado
+      responses:
+        '200':
+          description: Perfil actualizado
+  /api/v1/users:
+    get:
+      summary: Lista usuarios para administracion
+      parameters:
+        - in: query
+          name: q
+          schema:
+            type: string
+        - in: query
+          name: role
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Usuarios
+  /api/v1/articles:
+    get:
+      summary: Lista articulos publicos o editoriales
+      parameters:
+        - in: query
+          name: q
+          schema:
+            type: string
+        - in: query
+          name: category
+          schema:
+            type: string
+        - in: query
+          name: author
+          schema:
+            type: string
+        - in: query
+          name: order
+          schema:
+            type: string
+            enum: [latest, trend, views, favorites]
+        - in: query
+          name: page
+          schema:
+            type: integer
+        - in: query
+          name: size
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Articulos paginados
+    post:
+      summary: Crea un articulo
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Article'
+      responses:
+        '201':
+          description: Articulo creado
+  /api/v1/articles/featured:
+    get:
+      summary: Lista articulos destacados
+      responses:
+        '200':
+          description: Articulos destacados
+  /api/v1/articles/trending:
+    get:
+      summary: Lista articulos en tendencia
+      responses:
+        '200':
+          description: Articulos en tendencia
+  /api/v1/articles/{id}:
+    get:
+      summary: Obtiene un articulo por id
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      responses:
+        '200':
+          description: Articulo
+    put:
+      summary: Actualiza un articulo
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      responses:
+        '200':
+          description: Articulo actualizado
+    delete:
+      summary: Archiva un articulo
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      responses:
+        '200':
+          description: Articulo archivado
+  /api/v1/articles/{id}/versions:
+    get:
+      summary: Lista versiones anteriores
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      responses:
+        '200':
+          description: Historial de versiones
+  /api/v1/articles/{id}/versions/{versionId}/restore:
+    post:
+      summary: Restaura una version anterior
+      parameters:
+        - $ref: '#/components/parameters/Id'
+        - in: path
+          name: versionId
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Version restaurada
+  /api/v1/categories:
+    get:
+      summary: Lista categorias
+      responses:
+        '200':
+          description: Categorias
+    post:
+      summary: Crea una categoria
+      responses:
+        '201':
+          description: Categoria creada
+  /api/v1/comments:
+    get:
+      summary: Lista comentarios para moderacion
+      responses:
+        '200':
+          description: Comentarios
+    post:
+      summary: Publica un comentario
+      responses:
+        '201':
+          description: Comentario registrado
+  /api/v1/favorites:
+    get:
+      summary: Lista favoritos del lector
+      responses:
+        '200':
+          description: Favoritos
+  /api/v1/media:
+    get:
+      summary: Lista la biblioteca multimedia
+      responses:
+        '200':
+          description: Medios
+    post:
+      summary: Sube una imagen
+      responses:
+        '201':
+          description: Medio creado
+  /api/v1/dashboard:
+    get:
+      summary: Obtiene metricas editoriales
+      responses:
+        '200':
+          description: Dashboard
+  /api/v1/dashboard/sections:
+    get:
+      summary: Lista configuracion de portada
+      responses:
+        '200':
+          description: Secciones de portada
+components:
+  parameters:
+    Id:
+      in: path
+      name: id
+      required: true
+      schema:
+        type: integer
+        format: int64
+  schemas:
+    RegisterRequest:
+      type: object
+      required: [name, email, password]
+      properties:
+        name:
+          type: string
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          format: password
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          format: password
+    Article:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        titulo:
+          type: string
+        slug:
+          type: string
+        extracto:
+          type: string
+        contenido:
+          type: string
+        estado:
+          type: string
+          enum: [BORRADOR, EN_REVISION, PROGRAMADO, PUBLICADO, ARCHIVADO]
+        categoriaId:
+          type: integer
+          format: int64
+        autorId:
+          type: integer
+          format: int64

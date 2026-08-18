@@ -1,41 +1,33 @@
 package com.jeanpipi.util;
 
-import com.google.gson.JsonParseException;
-import com.jeanpipi.exception.ValidationException;
-
+// Lectura segura de parametros HTTP.
 import javax.servlet.http.HttpServletRequest;
-import java.io.IOException;
 
 public final class RequestUtil {
-    private RequestUtil() {
-    }
+    private RequestUtil() {}
 
-    public static boolean esJson(HttpServletRequest request) {
-        String contentType = request.getContentType();
-        return contentType != null && contentType.toLowerCase().contains("application/json");
-    }
-
-    public static <T> T leerJson(HttpServletRequest request, Class<T> type) throws IOException {
+    public static int intParam(HttpServletRequest request, String name, int defaultValue, int min, int max) {
         try {
-            T value = JsonUtil.gson().fromJson(request.getReader(), type);
-            if (value == null) {
-                throw new ValidationException("El cuerpo de la solicitud esta vacio.");
-            }
-            return value;
-        } catch (JsonParseException e) {
-            throw new ValidationException("El JSON enviado no es valido.");
+            int value = Integer.parseInt(request.getParameter(name));
+            return Math.max(min, Math.min(max, value));
+        } catch (Exception ex) {
+            return defaultValue;
         }
     }
 
-    public static int parametroEntero(HttpServletRequest request, String name) {
-        String value = request.getParameter(name);
-        if (value == null || value.isBlank()) {
-            throw new ValidationException("Falta el parametro " + name + ".");
-        }
+    public static Long longValue(String value) {
         try {
-            return Integer.parseInt(value);
-        } catch (NumberFormatException e) {
-            throw new ValidationException("El parametro " + name + " debe ser numerico.");
+            return value == null ? null : Long.parseLong(value);
+        } catch (NumberFormatException ex) {
+            return null;
         }
+    }
+
+    public static String clientIp(HttpServletRequest request) {
+        String forwarded = request.getHeader("X-Forwarded-For");
+        if (forwarded != null && !forwarded.isBlank()) {
+            return forwarded.split(",")[0].trim();
+        }
+        return request.getRemoteAddr();
     }
 }
